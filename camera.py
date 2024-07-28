@@ -34,6 +34,8 @@ def is_within_degrees(direction, dx, dy, angle):
         return is_within_0_degrees(direction, dx, dy)
     elif angle == 90:
         return is_within_90_degrees(direction, dx, dy)
+    elif angle == 180:
+        return is_within_180_degrees(direction, dx, dy)
 
 def is_within_0_degrees(direction, dx, dy):
     if dx == 0 and dy == 0:
@@ -68,18 +70,20 @@ def is_within_90_degrees(direction, dx, dy):
         return False
 
     # 角度を計算
-    angle = math.degrees(math.atan2(dy, dx))
+    angle = math.degrees(math.atan2(dx, dy))
+    if angle < 0:
+        angle += 360
 
     # 方向とその角度範囲を定義
     direction_angles = {
         "north": (-45, 45),
-        "northeast": (45, 135),
+        "northeast": (0, 90),
         "east": (45, 135),
-        "southeast": (135, 225),
+        "southeast": (90, 180),
         "south": (135, 225),
-        "southwest": (225, 315),
+        "southwest": (180, 270),
         "west": (225, 315),
-        "northwest": (-45, 45)
+        "northwest": (-90, 0)
     }
 
     # 角度範囲を調整し、360度スケールに合わせる
@@ -88,8 +92,38 @@ def is_within_90_degrees(direction, dx, dy):
         range_start += 360
         range_end += 360
         if range_end >= 360:
-            return (0 <= angle < range_end % 360) or (range_start <= angle < 360)
-    return range_start <= angle < range_end
+            return (0 <= angle <= range_end % 360) or (range_start <= angle <= 360)
+    return range_start <= angle <= range_end
+
+def is_within_180_degrees(direction, dx, dy):
+    if dx == 0 and dy == 0:
+        return False
+
+    # 角度を計算
+    angle = math.degrees(math.atan2(dx, dy))
+    if angle < 0:
+        angle += 360
+
+    # 方向とその角度範囲を定義
+    direction_angles = {
+        "north": (-90, 90),
+        "northeast": (-45, 135),
+        "east": (0, 180),
+        "southeast": (45, 225),
+        "south": (90, 270),
+        "southwest": (135, 315),
+        "west": (180, 360),
+        "northwest": (-135, 45)
+    }
+
+    # 角度範囲を調整し、360度スケールに合わせる
+    range_start, range_end = direction_angles[direction]
+    if range_start < 0:
+        range_start += 360
+        range_end += 360
+        if range_end >= 360:
+            return (0 <= angle <= range_end % 360) or (range_start <= angle <= 360)
+    return range_start <= angle <= range_end
 
 def is_line_blocked_by_obstacles(start, end, obstacles):
     """Check if a line from start to end is blocked by any obstacle."""
@@ -202,18 +236,23 @@ def calculate(positions, directions, coverage, camera_types, grid_size, budget, 
 
 def main():
     # Grid size and camera setup
-    grid_size = (6, 5)  # Example grid size
+    grid_size = (10, 8)  # Example grid size
     positions = [(i, j) for i in range(grid_size[0]) for j in range(grid_size[1])]
     directions = {
         "A": ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"],
-        "B": ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"]
+        "B": ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"],
+        "C": ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"],
     }
-    budget = 300
-    camera_angle = {"A": 0, "B": 90}  # Camera angles in degrees
-    camera_distance = {"A": 3, "B": 3}  # Maximum observation distance
-    obstacles = {(1, 1),(2, 1), (2, 4), (4, 2)}
+    budget = 1200
+    camera_angle = {"A": 0, "B": 90, "C": 180}  # Camera angles in degrees
+    camera_distance = {"A": 4, "B": 3, "C": 2}  # Maximum observation distance
+    obstacles = {
+        (1, 1),(2, 1), (3, 1), (4, 1), (5, 1), 
+        (2, 4), (4, 2), (4, 3), (4, 4), (4, 5), (4, 6),
+        (6, 6), (7, 6), (8, 6), (9, 6), (6, 8),
+        }
     coverage = compute_coverage(positions, directions, grid_size, camera_distance, obstacles, camera_angle)
-    calculate(positions, directions, coverage, camera_types={"A": 150, "B": 200}, grid_size=grid_size, budget=budget, obstacles=obstacles)
+    calculate(positions, directions, coverage, camera_types={"A": 100, "B": 200, "C": 500}, grid_size=grid_size, budget=budget, obstacles=obstacles)
 
 if __name__ == "__main__":
     main()
