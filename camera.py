@@ -236,20 +236,24 @@ def calculate(positions, directions, coverage, camera_types, grid_size, budget, 
 
 def main():
     # Grid size and camera setup
-    grid_size = (10, 8)  # Example grid size
-    positions = [(i, j) for i in range(grid_size[0]) for j in range(grid_size[1])]
+    grid_size = (20, 20)  # Example grid size
+    positions = [(i, j) for i in range(0, grid_size[0], 2) for j in range(0, grid_size[1], 2)]
     directions = {
         "A": ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"],
         "B": ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"],
         "C": ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"],
     }
-    budget = 1200
+    budget = 6000
     camera_angle = {"A": 0, "B": 90, "C": 180}  # Camera angles in degrees
     camera_distance = {"A": 4, "B": 3, "C": 2}  # Maximum observation distance
     obstacles = {
         (1, 1),(2, 1), (3, 1), (4, 1), (5, 1), 
         (2, 4), (4, 2), (4, 3), (4, 4), (4, 5), (4, 6),
         (6, 6), (7, 6), (8, 6), (9, 6), (6, 8),
+        (7, 3), (7, 4), (7, 5), (7, 6), (7, 7), (7, 8),
+        (8, 2), (8, 3), (8, 4), (8, 5), (8, 6), (8, 7), (8, 8),
+        (11, 11), (12, 11), (13, 11), (14, 11), (15, 11), (16, 11), (17, 11), (18, 11),
+        (11, 12), (11, 13), (11, 14), (11, 15), (11, 16), (11, 17), (11, 18),
         }
     coverage = compute_coverage(positions, directions, grid_size, camera_distance, obstacles, camera_angle)
     calculate(positions, directions, coverage, camera_types={"A": 100, "B": 200, "C": 500}, grid_size=grid_size, budget=budget, obstacles=obstacles)
