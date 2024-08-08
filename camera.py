@@ -30,41 +30,12 @@ def compute_coverage(positions, directions, grid_size, camera_distance, obstacle
     return coverage
 
 def is_within_degrees(direction, dx, dy, angle):
-    if angle == 0:
-        return is_within_0_degrees(direction, dx, dy)
-    elif angle == 90:
+    if angle == 90:
         return is_within_90_degrees(direction, dx, dy)
     elif angle == 180:
         return is_within_180_degrees(direction, dx, dy)
     elif angle == 360:
         return is_within_360_degrees(direction, dx, dy)
-
-def is_within_0_degrees(direction, dx, dy):
-    if dx == 0 and dy == 0:
-        return False
-
-    # ベクトルの角度を計算
-    angle = math.atan2(dy, dx) * 180 / math.pi
-
-    # 方向に基づいて正確な角度を定義
-    direction_angles = {
-        "north": 90,
-        "northeast": 45,
-        "east": 0,
-        "southeast": -45,
-        "south": -90,
-        "southwest": -135,
-        "west": 180,
-        "northwest": 135
-    }
-
-    # 角度が方向に厳密に一致するかチェック
-    target_angle = direction_angles[direction]
-    # 角度を調整して比較
-    angle = (angle + 360) % 360
-    target_angle = (target_angle + 360) % 360
-
-    return math.isclose(angle, target_angle, abs_tol=1.0)
 
 
 def is_within_90_degrees(direction, dx, dy):
@@ -73,28 +44,23 @@ def is_within_90_degrees(direction, dx, dy):
 
     # 角度を計算
     angle = math.degrees(math.atan2(dx, dy))
-    if angle < 0:
-        angle += 360
+    angle = (angle + 360) % 360  # 角度を正の範囲で正規化
 
-    # 方向とその角度範囲を定義
+    # 方向とその角度範囲を定義（より直感的な定義に）
     direction_angles = {
-        "north": (-45, 45),
+        "north": (315, 45),
         "northeast": (0, 90),
         "east": (45, 135),
         "southeast": (90, 180),
         "south": (135, 225),
         "southwest": (180, 270),
         "west": (225, 315),
-        "northwest": (-90, 0)
+        "northwest": (270, 360)
     }
 
-    # 角度範囲を調整し、360度スケールに合わせる
     range_start, range_end = direction_angles[direction]
-    if range_start < 0:
-        range_start += 360
-        range_end += 360
-        if range_end >= 360:
-            return (0 <= angle <= range_end % 360) or (range_start <= angle <= 360)
+    if range_end < range_start:
+        return (0 <= angle <= range_end) or (range_start <= angle <= 360)
     return range_start <= angle <= range_end
 
 def is_within_180_degrees(direction, dx, dy):
@@ -108,23 +74,20 @@ def is_within_180_degrees(direction, dx, dy):
 
     # 方向とその角度範囲を定義
     direction_angles = {
-        "north": (-90, 90),
-        "northeast": (-45, 135),
+        "north": (270, 90),
+        "northeast": (315, 135),
         "east": (0, 180),
         "southeast": (45, 225),
         "south": (90, 270),
         "southwest": (135, 315),
         "west": (180, 360),
-        "northwest": (-135, 45)
+        "northwest": (225, 45)
     }
 
     # 角度範囲を調整し、360度スケールに合わせる
     range_start, range_end = direction_angles[direction]
-    if range_start < 0:
-        range_start += 360
-        range_end += 360
-        if range_end >= 360:
-            return (0 <= angle <= range_end % 360) or (range_start <= angle <= 360)
+    if range_end < range_start:
+        return (0 <= angle <= range_end) or (range_start <= angle <= 360)
     return range_start <= angle <= range_end
 
 def is_within_360_degrees(direction, dx, dy):
@@ -150,11 +113,8 @@ def is_within_360_degrees(direction, dx, dy):
 
     # 角度範囲を調整し、360度スケールに合わせる
     range_start, range_end = direction_angles[direction]
-    if range_start < 0:
-        range_start += 360
-        range_end += 360
-        if range_end >= 360:
-            return (0 <= angle <= range_end % 360) or (range_start <= angle <= 360)
+    if range_end < range_start:
+        return (0 <= angle <= range_end) or (range_start <= angle <= 360)
     return range_start <= angle <= range_end
 
 
@@ -178,8 +138,6 @@ def supercover_line(x0, y0, x1, y1):
     y = y0
     dx = dx / num_steps_x if num_steps_x != 0 else 0
     dy = dy / num_steps_x if num_steps_x != 0 else 0
-    if (x0, y0) == (3, 5) and (x1, y1) == (1,7):
-        import pdb; pdb.set_trace()
     for i in range(num_steps_x + 1):
         if i == 0:
             points.append((int(round(x)), int(round(y))))
@@ -216,8 +174,8 @@ def visualize_camera_coverage_by_position(grid_size, x, coverage, obstacles):
     ax.set_ylim(0, grid_size[1])
     ax.set_xticks(range(grid_size[0] + 1))
     ax.set_yticks(range(grid_size[1] + 1))
-    ax.set_xticklabels([str(num) for num in range(grid_size[0] + 1)], fontsize=30)
-    ax.set_yticklabels([str(num) for num in reversed(range(grid_size[1] + 1))], fontsize=30)
+    ax.set_xticklabels([str(num) for num in range(grid_size[0] + 1)], fontsize=50)
+    ax.set_yticklabels([str(num) for num in reversed(range(grid_size[1] + 1))], fontsize=50)
     ax.grid(True)
 
     # グリッドの描画
@@ -288,6 +246,46 @@ def calculate(positions, directions, coverage, camera_types, grid_size, budget, 
         # カメラの配置とカバレッジ領域の可視化
         visualize_camera_coverage_by_position(grid_size, x, coverage, obstacles)
 
+# 指定したxで可視化
+def visualize_camera_coverage_by_x(grid_size, coverage, pos, cam_type, direction, obstacles):
+    plt.clf()
+    fig, ax = plt.subplots(figsize=(2*grid_size[0], 2*grid_size[1]))
+    ax.set_xlim(0, grid_size[0])
+    ax.set_ylim(0, grid_size[1])
+    ax.set_xticks(range(grid_size[0] + 1))
+    ax.set_yticks(range(grid_size[1] + 1))
+    ax.set_xticklabels([str(num) for num in range(grid_size[0] + 1)], fontsize=50)
+    ax.set_yticklabels([str(num) for num in reversed(range(grid_size[1] + 1))], fontsize=50)
+    ax.grid(True)
+
+    # グリッドの描画
+    for i in range(grid_size[0]):
+        for j in range(grid_size[1]):
+            rect = patches.Rectangle((j, grid_size[1] - i - 1), 1, 1, linewidth=1, edgecolor='r', facecolor='none')
+            ax.add_patch(rect)
+
+    # 障害物の描画
+    for obstacle in obstacles:
+        rect = patches.Rectangle((obstacle[0], grid_size[1] - obstacle[1] - 1), 1, 1, linewidth=1, edgecolor='r', facecolor='black')
+        ax.add_patch(rect)
+    
+    # 色のマッピングを生成
+    # unique_positions = set(key[0] for key in x.keys() if x[key].varValue > 0.5)
+    # color_map = {pos: plt.cm.get_cmap('viridis')(i / len(unique_positions)) for i, pos in enumerate(unique_positions)}
+
+    # カメラの配置とカバレッジ領域の表示
+    camera_color = "red"
+    # カバレッジ領域の表示
+    for (i, j) in coverage[pos][cam_type][direction]:
+        rect = patches.Rectangle((i, grid_size[1] - j - 1), 1, 1, linewidth=1, edgecolor='none', facecolor=camera_color, alpha=0.5)
+        ax.add_patch(rect)
+    ax.text(pos[0] + 0.5, grid_size[1] - pos[1] - 0.5, f'{cam_type}\n{direction}', color='black', ha='center', va='center')
+
+    plt.gca().invert_yaxis()  # y軸を反転
+    plt.legend()
+    plt.savefig("camera_placement_by_position_x.png")
+
+
 
 
 def main():
@@ -299,11 +297,11 @@ def main():
         "B": ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"],
         "C": ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"],
         "D": ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"],
-        "E": ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"],
+        # "E": ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"],
     }
     budget = 150
-    camera_distance = {"A": 0, "B": 4, "C": 1, "D": 2, "E": 1}  # Camera angles in degrees
-    camera_angle = {"A": 0, "B": 90, "C": 180, "D": 360, "E": 360}  # Maximum observation distance
+    camera_distance = {"A": 4, "B": 1, "C": 2, "D": 1}  # Camera angles in degrees
+    camera_angle = {"A": 90, "B": 180, "C": 360, "D": 360}  # Maximum observation distance
     obstacles = {
         (1, 1),(2, 1), (3, 1), (4, 1), (5, 1), (6, 1), (7, 1), (8, 1), (9, 1), (10, 1), (11, 1), (12, 1), (13, 1), (14, 1), (15, 1), (16, 1), (17, 1), (18, 1), (19, 1), (20, 1), (21, 1), (22, 1), (23, 1), (24, 1), (25, 1), (26, 1), (27, 1), (28, 1),
         (2, 4), (4, 2), (4, 3), (4, 4), (4, 5), (4, 6), (4, 7), (4, 8), (4, 9), (4, 10), (4, 11), (4, 12), (4, 13), (4, 14), (4, 15), (4, 16), (4, 17), (4, 18), (4, 19), (4, 20), (4, 21), (4, 22), (4, 23), (4, 24), (4, 25), (4, 26), (4, 27), (4, 28),
@@ -331,7 +329,6 @@ def main():
         }
     obstacles = {(1, 3), (1, 7), (1, 8), (1, 9), (2, 1), (2, 8), (2, 9), (3, 1), (3, 3), (3, 6), (3, 8), (3, 9), (4, 1), (4, 3), (4, 5), (4, 6), (4, 8), (4, 9), (5, 1), (5, 5), (5, 6), (5, 8), (5, 9), (6, 1), (6, 8), (6, 9), (7, 1), (7, 2), (7, 3), (7, 5), (7, 6), (7, 8), (7, 9), (8, 1), (8, 2), (8, 3), (9, 1), (9, 2), (9, 3), (9, 4), (9, 5), (9, 8), (9, 9)}
     coverage = compute_coverage(positions, directions, grid_size, camera_distance, obstacles, camera_angle)
-    calculate(positions, directions, coverage, camera_types={"A": 8, "B": 33, "C": 12, "D": 30, "E": 21}, grid_size=grid_size, budget=budget, obstacles=obstacles)
-
+    calculate(positions, directions, coverage, camera_types={"A": 33,"B": 12, "C": 30, "D": 21}, grid_size=grid_size, budget=budget, obstacles=obstacles)
 if __name__ == "__main__":
     main()
