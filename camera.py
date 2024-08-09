@@ -137,29 +137,43 @@ def supercover_line(x0, y0, x1, y1):
     x = x0
     y = y0
     dx = dx / num_steps_x if num_steps_x != 0 else 0
-    dy = dy / num_steps_x if num_steps_x != 0 else 0
-    for i in range(num_steps_x + 1):
+    dy = dy / num_steps_x if num_steps_x != 0 else num_steps_y
+    # if (x0, y0, x1, y1) == (3, 7, 2, 4):
+    #     import pdb; pdb.set_trace()
+    for i in range(2 * num_steps_x + 1):
         if i == 0:
-            points.append((int(round(x)), int(round(y))))
-            points.append((int(round(x1)), int(round(y1))))
+            points.append((x, y))
+            points.append((x1, y1))
             x += 0.5 * dx
             y += 0.5 * dy       
         if i > 0:
             if y - int(y) != 0.5:
-                points.append((int(round(x)), int(round(y))))
+                if dx < 0:
+                    points.append((math.floor(x), round(y)))
+                else:
+                    points.append((math.ceil(x), round(y)))
             elif x - int(x) == 0 and y - int(y) == 0:
                 points.append((int(round(x)), int(round(y))))
             x += 0.5 * dx
             y += 0.5 * dy
-    dx = dx / num_steps_y if num_steps_y != 0 else 0
+    dx = x1 - x0
+    dy = y1 - y0
+    x = x0
+    y = y0
+    dx = dx / num_steps_y if num_steps_y != 0 else num_steps_x
     dy = dy / num_steps_y if num_steps_y != 0 else 0
-    for i in range(num_steps_y + 1):
+    # if (x0, y0, x1, y1) == (3, 7, 2, 4):
+    #     import pdb; pdb.set_trace()
+    for i in range(2 * num_steps_y + 1):
         if i == 0:
             x += 0.5 * dx
             y += 0.5 * dy
         if i > 0:
             if x - int(x) != 0.5:
-                points.append((int(round(x)), int(round(y))))
+                if dy < 0:
+                    points.append((round(x), math.floor(y)))
+                else:
+                    points.append((round(x), math.ceil(y)))
             x += 0.5 * dx
             y += 0.5 * dy
 
@@ -330,5 +344,10 @@ def main():
     obstacles = {(1, 3), (1, 7), (1, 8), (1, 9), (2, 1), (2, 8), (2, 9), (3, 1), (3, 3), (3, 6), (3, 8), (3, 9), (4, 1), (4, 3), (4, 5), (4, 6), (4, 8), (4, 9), (5, 1), (5, 5), (5, 6), (5, 8), (5, 9), (6, 1), (6, 8), (6, 9), (7, 1), (7, 2), (7, 3), (7, 5), (7, 6), (7, 8), (7, 9), (8, 1), (8, 2), (8, 3), (9, 1), (9, 2), (9, 3), (9, 4), (9, 5), (9, 8), (9, 9)}
     coverage = compute_coverage(positions, directions, grid_size, camera_distance, obstacles, camera_angle)
     calculate(positions, directions, coverage, camera_types={"A": 33,"B": 12, "C": 30, "D": 21}, grid_size=grid_size, budget=budget, obstacles=obstacles)
+    pos, cam_type, direction = (3, 7), "A", "southwest"
+    import pdb; pdb.set_trace()
+    visualize_camera_coverage_by_x(grid_size, coverage, pos, cam_type, direction, obstacles)
+
+
 if __name__ == "__main__":
     main()
