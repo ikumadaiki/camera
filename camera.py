@@ -138,8 +138,6 @@ def supercover_line(x0, y0, x1, y1):
     y = y0
     dx = dx / num_steps_x if num_steps_x != 0 else 0
     dy = dy / num_steps_x if num_steps_x != 0 else num_steps_y
-    # if (x0, y0, x1, y1) == (3, 7, 2, 4):
-    #     import pdb; pdb.set_trace()
     for i in range(2 * num_steps_x + 1):
         if i == 0:
             points.append((x, y))
@@ -162,8 +160,6 @@ def supercover_line(x0, y0, x1, y1):
     y = y0
     dx = dx / num_steps_y if num_steps_y != 0 else num_steps_x
     dy = dy / num_steps_y if num_steps_y != 0 else 0
-    # if (x0, y0, x1, y1) == (3, 7, 2, 4):
-    #     import pdb; pdb.set_trace()
     for i in range(2 * num_steps_y + 1):
         if i == 0:
             x += 0.5 * dx
@@ -177,7 +173,7 @@ def supercover_line(x0, y0, x1, y1):
             x += 0.5 * dx
             y += 0.5 * dy
 
-    return set(points)  # 重複を避けるためにセットに変換
+    return set(points)
 
 
 
@@ -186,11 +182,10 @@ def visualize_camera_coverage_by_position(grid_size, x, coverage, obstacles):
     fig, ax = plt.subplots(figsize=(2*grid_size[0], 2*grid_size[1]))
     ax.set_xlim(0, grid_size[0])
     ax.set_ylim(0, grid_size[1])
-    ax.set_xticks(range(grid_size[0] + 1))
-    ax.set_yticks(range(grid_size[1] + 1))
-    ax.set_xticklabels([str(num) for num in range(grid_size[0] + 1)], fontsize=50)
-    ax.set_yticklabels([str(num) for num in reversed(range(grid_size[1] + 1))], fontsize=50)
-    ax.grid(True)
+    ax.set_xticks([i + 0.5 for i in range(grid_size[0])])  # Offset to center labels
+    ax.set_yticks([i - 0.5 for i in range(grid_size[1], 0, -1)])  # Offset to center labels
+    ax.set_xticklabels([str(num) for num in range(grid_size[0])], fontsize=30, verticalalignment='center')
+    ax.set_yticklabels([str(num) for num in range(grid_size[1])], fontsize=30, horizontalalignment='right')    # ax.grid(True)
 
     # グリッドの描画
     for i in range(grid_size[0]):
