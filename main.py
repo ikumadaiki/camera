@@ -121,6 +121,9 @@ def is_within_360_degrees(direction, dx, dy):
 def is_line_blocked_by_obstacles(start, end, obstacles):
     """Check if a line from start to end is blocked by any obstacle."""
     points = supercover_line(start[0], start[1], end[0], end[1])
+    if points != supercover_line_(start[0], start[1], end[0], end[1]):
+        import pdb; pdb.set_trace()
+        supercover_line_(start[0], start[1], end[0], end[1])
     for point in points:
         if (point[0], point[1]) in obstacles:
             return True
@@ -129,15 +132,17 @@ def is_line_blocked_by_obstacles(start, end, obstacles):
 
 def supercover_line(x0, y0, x1, y1):
     points = []
+    eps = 1e-6
     dx = x1 - x0
     dy = y1 - y0
     num_steps_x = abs(dx)
     num_steps_y = abs(dy)
-
     x = x0
     y = y0
     dx = dx / num_steps_x if num_steps_x != 0 else 0
     dy = dy / num_steps_x if num_steps_x != 0 else num_steps_y
+    # if (x0, y0, x1, y1) == (0, 1, 3, 0):
+    #     import pdb; pdb.set_trace()
     for i in range(2 * num_steps_x + 1):
         if i == 0:
             points.append((x, y))
@@ -145,7 +150,9 @@ def supercover_line(x0, y0, x1, y1):
             x += 0.5 * dx
             y += 0.5 * dy       
         if i > 0:
-            if y - int(y) != 0.5:
+            if abs(y - int(y) - 0.5) < eps:
+                pass
+            elif y - int(y) != 0.5:
                 if dx < 0:
                     points.append((math.floor(x), round(y)))
                 else:
@@ -165,11 +172,66 @@ def supercover_line(x0, y0, x1, y1):
             x += 0.5 * dx
             y += 0.5 * dy
         if i > 0:
-            if x - int(x) != 0.5:
+            if abs(x - int(x) - 0.5) < eps:
+                pass
+            elif x - int(x) != 0.5:
                 if dy < 0:
                     points.append((round(x), math.floor(y)))
                 else:
                     points.append((round(x), math.ceil(y)))
+            elif x - int(x) == 0 and y - int(y) == 0:
+                points.append((int(round(x)), int(round(y))))
+            x += 0.5 * dx
+            y += 0.5 * dy
+
+    return set(points)
+
+def supercover_line_(x0, y0, x1, y1):
+    # if (x0, y0, x1, y1) == (0, 1, 3, 2):
+    #     import pdb; pdb.set_trace()
+    points = []
+    eps = 1e-6
+    dx = x1 - x0
+    dy = y1 - y0
+    num_steps = max(abs(dx), abs(dy))
+    x = x0
+    y = y0
+    dx = dx / num_steps
+    dy = dy / num_steps
+    for i in range(2 * num_steps + 1):
+        if i == 0:
+            points.append((x, y))
+            points.append((x1, y1))
+            x += 0.5 * dx
+            y += 0.5 * dy       
+        if i > 0:
+            if x - int(x) == 0 and y - int(y) == 0:
+                points.append((x, y))
+            elif x - int(x) == 0 and y - int(y) == 0:
+                pass
+            elif x - int(x) != 0.5 or y - int(y) != 0.5:
+                if abs(dx) >= abs(dy):
+                    if abs(x - int(x) - 0.5) < eps and abs(y - int(y) - 0.5) < eps:
+                        pass
+                    elif abs(y - int(y) - 0.5) < eps:
+                        points.append((math.floor(x), round(y+eps)))
+                        points.append((math.floor(x), round(y-eps)))
+                        points.append((math.ceil(x), round(y+eps)))
+                        points.append((math.ceil(x), round(y-eps)))
+                    else:
+                        points.append((math.floor(x), round(y)))
+                        points.append((math.ceil(x), round(y)))
+                elif abs(dx) < abs(dy):
+                    if abs(x - int(x) - 0.5) < eps and abs(y - int(y) - 0.5) < eps:
+                        pass
+                    elif abs(x - int(x) - 0.5) < eps:
+                        points.append((round(x+eps), math.floor(y)))
+                        points.append((round(x-eps), math.floor(y)))
+                        points.append((round(x+eps), math.ceil(y)))
+                        points.append((round(x-eps), math.ceil(y)))
+                    else:
+                        points.append((round(x), math.floor(y)))
+                        points.append((round(x), math.ceil(y)))
             x += 0.5 * dx
             y += 0.5 * dy
 
