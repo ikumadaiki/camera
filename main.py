@@ -187,9 +187,7 @@ def supercover_line(x0, y0, x1, y1):
     return set(points)
 
 def supercover_line_(x0, y0, x1, y1):
-    # if (x0, y0, x1, y1) == (0, 1, 3, 2):
-    #     import pdb; pdb.set_trace()
-    points = []
+    points = set()
     eps = 1e-6
     dx = x1 - x0
     dy = y1 - y0
@@ -200,38 +198,33 @@ def supercover_line_(x0, y0, x1, y1):
     dy = dy / num_steps
     for i in range(2 * num_steps + 1):
         if i == 0:
-            points.append((x, y))
-            points.append((x1, y1))
+            points.add((x, y))
             x += 0.5 * dx
-            y += 0.5 * dy       
+            y += 0.5 * dy   
         if i > 0:
-            if x - int(x) == 0 and y - int(y) == 0:
-                points.append((x, y))
-            elif x - int(x) == 0 and y - int(y) == 0:
+            if x - int(x) == 0 and y - int(y) == 0: # パターン1
+                points.add((x, y))
+            elif x - int(x) == 0.5 and y - int(y) == 0.5: # パターン2
                 pass
             elif x - int(x) != 0.5 or y - int(y) != 0.5:
                 if abs(dx) >= abs(dy):
-                    if abs(x - int(x) - 0.5) < eps and abs(y - int(y) - 0.5) < eps:
+                    if abs(x - int(x) - 0.5) < eps and abs(y - int(y) - 0.5) < eps: # パターン2
                         pass
-                    elif abs(y - int(y) - 0.5) < eps:
-                        points.append((math.floor(x), round(y+eps)))
-                        points.append((math.floor(x), round(y-eps)))
-                        points.append((math.ceil(x), round(y+eps)))
-                        points.append((math.ceil(x), round(y-eps)))
-                    else:
-                        points.append((math.floor(x), round(y)))
-                        points.append((math.ceil(x), round(y)))
+                    elif abs(y - int(y) - 0.5) < eps: # パターン3
+                        points.add((round(x), round(y+eps)))
+                        points.add((round(x), round(y-eps)))
+                    else: # パターン4
+                        points.add((math.floor(x), round(y)))
+                        points.add((math.ceil(x), round(y)))
                 elif abs(dx) < abs(dy):
-                    if abs(x - int(x) - 0.5) < eps and abs(y - int(y) - 0.5) < eps:
+                    if abs(x - int(x) - 0.5) < eps and abs(y - int(y) - 0.5) < eps: # パターン2
                         pass
-                    elif abs(x - int(x) - 0.5) < eps:
-                        points.append((round(x+eps), math.floor(y)))
-                        points.append((round(x-eps), math.floor(y)))
-                        points.append((round(x+eps), math.ceil(y)))
-                        points.append((round(x-eps), math.ceil(y)))
-                    else:
-                        points.append((round(x), math.floor(y)))
-                        points.append((round(x), math.ceil(y)))
+                    elif abs(x - int(x) - 0.5) < eps: # パターン3
+                        points.add((round(x+eps), round(y)))
+                        points.add((round(x-eps), round(y)))
+                    else: # パターン4
+                        points.add((round(x), math.floor(y)))
+                        points.add((round(x), math.ceil(y)))
             x += 0.5 * dx
             y += 0.5 * dy
 
