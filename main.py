@@ -266,7 +266,7 @@ def visualize_camera_coverage_by_position(grid_size, x, coverage, obstacles):
             for (i, j) in coverage[key[0]][key[1]][key[2]]:
                 rect = patches.Rectangle((i, grid_size[1] - j - 1), 1, 1, linewidth=1, edgecolor='none', facecolor=camera_color, alpha=0.5)
                 ax.add_patch(rect)
-            ax.text(pos[0] + 0.5, grid_size[1] - pos[1] - 0.5, f'{cam_type}\n{direction}', color='black', ha='center', va='center')
+            ax.text(pos[0] + 0.5, grid_size[1] - pos[1] - 0.5, f'{cam_type}\n{direction}', color='black', ha='center', va='center', fontsize=20)
 
     plt.gca().invert_yaxis()  # y軸を反転
     plt.legend()
@@ -277,25 +277,34 @@ def visualize_camera_coverage_by_position(grid_size, x, coverage, obstacles):
 
 def calculate(positions, directions, coverage, camera_types, grid_size, budget, obstacles):
     # PuLP問題の設定
-    prob = pulp.LpProblem("CameraPlacement", pulp.LpMaximize)
+    # prob = pulp.LpProblem("CameraPlacement", pulp.LpMaximize)
+    prob = pulp.LpProblem("CameraPlacement", pulp.LpMinimize)
     x = pulp.LpVariable.dicts("x", ((pos, cam_type, dir) for pos in positions for cam_type in camera_types for dir in directions[cam_type]), cat="Binary")
-    z = pulp.LpVariable.dicts("z", ((i, j) for i in range(grid_size[0]) for j in range(grid_size[1])), cat="Binary")
+    # z = pulp.LpVariable.dicts("z", ((i, j) for i in range(grid_size[0]) for j in range(grid_size[1])), cat="Binary")
+
+    for pos in positions:
+        for cam_type in camera_types:
+            for dir in directions[cam_type]:
+                x[pos, cam_type, dir] = pulp.LpVariable(f"x_{pos}_{cam_type}_{dir}", cat="Binary")
 
     # 目的関数
-    prob += pulp.lpSum([z[(i, j)] for i in range(grid_size[0]) for j in range(grid_size[1])])
+    # prob += pulp.lpSum([z[(i, j)] for i in range(grid_size[0]) for j in range(grid_size[1])])
+    prob += pulp.lpSum(camera_types[cam_type] * x[(pos, cam_type, dir)] for pos in positions for cam_type in camera_types for dir in directions[cam_type])
 
     # 予算制約
-    prob += pulp.lpSum(camera_types[cam_type] * x[(pos, cam_type, dir)] for pos in positions for cam_type in camera_types for dir in directions[cam_type]) <= budget
+    # prob += pulp.lpSum(camera_types[cam_type] * x[(pos, cam_type, dir)] for pos in positions for cam_type in camera_types for dir in directions[cam_type]) <= budget
 
     # 配置制約
     for pos in positions:
         prob += pulp.lpSum([x[(pos, cam_type, dir)] for cam_type in camera_types for dir in directions[cam_type]]) <= 1
 
     # カバレッジ制約
-    for i in range(grid_size[0]):
-        for j in range(grid_size[1]):
+    for area in positions:
+        if area in obstacles:
+            continue
             # 各グリッドセル (i, j) がカバーされていることを確認
-            prob += z[(i, j)] <= pulp.lpSum(x[pos, cam_type, dir] for pos in positions for cam_type in camera_types for dir in directions[cam_type] if (i, j) in coverage[pos][cam_type][dir])
+            # prob += z[(i, j)] <= pulp.lpSum(x[pos, cam_type, dir] for pos in positions for cam_type in camera_types for dir in directions[cam_type] if (i, j) in coverage[pos][cam_type][dir])
+        prob += 1 <= pulp.lpSum(x[pos, cam_type, dir] for pos in positions for cam_type in camera_types for dir in directions[cam_type] if area in coverage[pos][cam_type][dir])
 
     # 問題を解く
     prob.solve()
@@ -353,8 +362,7 @@ def visualize_camera_coverage_by_x(grid_size, coverage, pos, cam_type, direction
 
 
 def main():
-    # Grid size and camera setup
-    grid_size = (10, 10)  # Example grid size
+    grid_size = (10, 10)  # エリアのサイズ
     positions = [(i, j) for i in range(grid_size[0]) for j in range(grid_size[1])]
     directions = {
         "A": ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"],
@@ -363,9 +371,10 @@ def main():
         "D": ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"],
         # "E": ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"],
     }
-    budget = 150
     camera_distance = {"A": 4, "B": 1, "C": 2, "D": 1}  # Camera angles in degrees
     camera_angle = {"A": 90, "B": 180, "C": 360, "D": 360}  # Maximum observation distance
+    camera_types={"A": 33,"B": 12, "C": 30, "D": 21}
+    budget = 150
     obstacles = {
         (1, 1),(2, 1), (3, 1), (4, 1), (5, 1), (6, 1), (7, 1), (8, 1), (9, 1), (10, 1), (11, 1), (12, 1), (13, 1), (14, 1), (15, 1), (16, 1), (17, 1), (18, 1), (19, 1), (20, 1), (21, 1), (22, 1), (23, 1), (24, 1), (25, 1), (26, 1), (27, 1), (28, 1),
         (2, 4), (4, 2), (4, 3), (4, 4), (4, 5), (4, 6), (4, 7), (4, 8), (4, 9), (4, 10), (4, 11), (4, 12), (4, 13), (4, 14), (4, 15), (4, 16), (4, 17), (4, 18), (4, 19), (4, 20), (4, 21), (4, 22), (4, 23), (4, 24), (4, 25), (4, 26), (4, 27), (4, 28),
@@ -393,7 +402,7 @@ def main():
         }
     obstacles = {(1, 3), (1, 7), (1, 8), (1, 9), (2, 1), (2, 8), (2, 9), (3, 1), (3, 3), (3, 6), (3, 8), (3, 9), (4, 1), (4, 3), (4, 5), (4, 6), (4, 8), (4, 9), (5, 1), (5, 5), (5, 6), (5, 8), (5, 9), (6, 1), (6, 8), (6, 9), (7, 1), (7, 2), (7, 3), (7, 5), (7, 6), (7, 8), (7, 9), (8, 1), (8, 2), (8, 3), (9, 1), (9, 2), (9, 3), (9, 4), (9, 5), (9, 8), (9, 9)}
     coverage = compute_coverage(positions, directions, grid_size, camera_distance, obstacles, camera_angle)
-    calculate(positions, directions, coverage, camera_types={"A": 33,"B": 12, "C": 30, "D": 21}, grid_size=grid_size, budget=budget, obstacles=obstacles)
+    calculate(positions, directions, coverage, camera_types, grid_size=grid_size, budget=budget, obstacles=obstacles)
     pos, cam_type, direction = (3, 7), "A", "southwest"
     import pdb; pdb.set_trace()
     visualize_camera_coverage_by_x(grid_size, coverage, pos, cam_type, direction, obstacles)
