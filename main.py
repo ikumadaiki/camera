@@ -56,10 +56,6 @@ def is_within_degrees(direction, dx, dy, angle):
 
 
 def is_within_90_degrees(direction, dx, dy):
-    if dx == 0 and dy == 0:
-        return False
-
-    # 角度を計算
     angle = math.degrees(math.atan2(dx, dy))
     angle = (angle + 360) % 360  # 角度を正の範囲で正規化
 
@@ -82,9 +78,6 @@ def is_within_90_degrees(direction, dx, dy):
 
 
 def is_within_180_degrees(direction, dx, dy):
-    if dx == 0 and dy == 0:
-        return False
-
     # 角度を計算
     angle = math.degrees(math.atan2(dx, dy))
     if angle < 0:
@@ -110,9 +103,6 @@ def is_within_180_degrees(direction, dx, dy):
 
 
 def is_within_360_degrees(direction, dx, dy):
-    if dx == 0 and dy == 0:
-        return False
-
     # 角度を計算
     angle = math.degrees(math.atan2(dx, dy))
     if angle < 0:
@@ -306,12 +296,22 @@ def calculate(
     )
     z = pulp.LpVariable.dicts(
         "z",
-        ((i, j) for i in range(grid_size[0]) for j in range(grid_size[1])),
+        (
+            (i, j)
+            for i in range(grid_size[0])
+            for j in range(grid_size[1])
+            if (i, j) not in obstacles
+        ),
         cat="Binary",
     )
     # 目的関数
     prob += pulp.lpSum(
-        [z[(i, j)] for i in range(grid_size[0]) for j in range(grid_size[1])]
+        [
+            z[(i, j)]
+            for i in range(grid_size[0])
+            for j in range(grid_size[1])
+            if (i, j) not in obstacles
+        ]
     )
     # 予算制約
     prob += (
@@ -336,27 +336,17 @@ def calculate(
             <= 1
         )
     # カバレッジ制約
-    for i in range(grid_size[0]):
-        for j in range(grid_size[1]):
-            # 各グリッドセル (i, j) がカバーされていることを確認
-            prob += z[(i, j)] <= pulp.lpSum(
-                x[pos, cam_type, dir]
-                for pos in positions
-                for cam_type in camera_costs
-                for dir in directions
-                if (i, j) in coverage[pos][cam_type][dir]
-            )
-    for pos in necessary_area:
-        prob += (
-            pulp.lpSum(
-                [
-                    z[(i, j)]
-                    for i in range(pos[0], pos[0] + 1)
-                    for j in range(pos[1], pos[1] + 1)
-                ]
-            )
-            == 1
+    for i, j in z.keys():
+        # 各グリッドセル (i, j) がカバーされていることを確認
+        prob += z[(i, j)] <= pulp.lpSum(
+            x[pos, cam_type, dir]
+            for pos in positions
+            for cam_type in camera_costs
+            for dir in directions
+            if (i, j) in coverage[pos][cam_type][dir]
         )
+    for area in necessary_area:
+        prob += z[area] == 1
     # 問題を解く
     prob.solve()
 
@@ -453,12 +443,12 @@ def cam_possible(pos, obstacles):
         (0, 0),  # 現在の位置
         (1, 0),  # 右
         (0, 1),  # 下
-        (1, 1),  # 右下
+        # (1, 1),  # 右下
         (-1, 0),  # 左
         (0, -1),  # 上
-        (-1, -1),  # 左上
-        (1, -1),  # 右上
-        (-1, 1),  # 左下
+        # (-1, -1),  # 左上
+        # (1, -1),  # 右上
+        # (-1, 1),  # 左下
     ]
 
     # どの隣接位置も障害物を含まないかチェック
