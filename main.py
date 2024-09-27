@@ -281,6 +281,7 @@ def calculate(
     obstacles,
     camera_angles,
     necessary_area,
+    priority,
 ):
     # PuLP問題の設定
     prob = pulp.LpProblem("CameraPlacement", pulp.LpMaximize)
@@ -307,7 +308,7 @@ def calculate(
     # 目的関数
     prob += pulp.lpSum(
         [
-            z[(i, j)]
+            priority[(i, j)] * z[(i, j)]
             for i in range(grid_size[0])
             for j in range(grid_size[1])
             if (i, j) not in obstacles
@@ -531,6 +532,42 @@ def main():
         for j in range(grid_size[1])
         if not cam_possible((i, j), obstacles)
     ]
+    default_priority = 1
+
+    # 優先度2と3に設定したいセルをリストアップ
+    priority_3_cells = {
+        (0, 3),  # 必須エリア
+        # 他に優先度3にしたいセルを追加
+        # 例: (2, 2), (5, 5)
+    }
+
+    priority_2_cells = {
+        # 優先度2にしたいセルを追加
+        # 例: (2, 2), (5, 5)
+    }
+
+    # 必須エリアを優先度3に追加
+    for area in necessary_area:
+        priority_3_cells.add(area)
+
+    # 優先度辞書の初期化
+    priority = {}
+
+    # すべてのセルにデフォルト優先度を設定
+    for i in range(grid_size[0]):
+        for j in range(grid_size[1]):
+            if (i, j) not in obstacles:
+                priority[(i, j)] = default_priority
+
+    # 優先度3のセルを設定
+    for cell in priority_3_cells:
+        if cell in priority:  # 障害物でないことを確認
+            priority[cell] = 3
+
+    # 優先度2のセルを設定
+    for cell in priority_2_cells:
+        if cell in priority:  # 障害物でないことを確認
+            priority[cell] = 2
     coverage = compute_coverage(
         positions, directions, grid_size, camera_distance, obstacles, camera_angle
     )
@@ -544,6 +581,7 @@ def main():
         obstacles=obstacles,
         camera_angles=camera_angle,
         necessary_area=necessary_area,
+        priority=priority,
     )
 
 
