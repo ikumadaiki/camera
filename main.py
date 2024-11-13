@@ -356,6 +356,14 @@ def calculate(
         for v in prob.variables():
             if v.varValue > 0:
                 print(v.name, "=", v.varValue)
+        # そうコストの計算
+        total_cost = sum(
+            camera_costs[cam_type] * x[(pos, cam_type, dir)].varValue
+            for pos in positions
+            for cam_type in camera_costs
+            for dir in directions
+        )
+        print("Total cost:", total_cost)
         print("Optimal value:", pulp.value(prob.objective))
 
         # カメラの配置とカバレッジ領域の可視化
